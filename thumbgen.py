@@ -4,7 +4,6 @@
 from PIL import Image
 from os import listdir
 from os.path import isfile, join
-import numpy
 import subprocess as sp
 import sys
 from math import floor
@@ -13,24 +12,57 @@ import shlex
 import os
 import tempfile
 import re
+import getopt
 
 num_row = 5
 num_col = 3
 thumb_width = 360
 offset = 60
+dry_run = False
+recursive = True
+
 
 def run(filename):
+
+    # basename
+    _filename = os.path.basename(filename)
+
+    # recursive if configured
+    if os.path.isdir(filename):
+        if recursive:
+            print 'REC enter %s' % filename
+            for f in os.listdir(filename):
+                ff = os.path.join(filename, f)
+                print 'REC %s' % f
+                run(ff)
+            print 'REC leave %s' % filename
+
+    # check support
+    ext = os.path.splitext(filename)[1]
+    if ext not in ('.m4v', '.wmv', '.avi', '.mkv', '.mp4'):
+        print 'ERR file %s not supported' % _filename
+        return -1
+
     if filename.startswith('/'):
         outd = os.path.dirname(filename)
     else:
         outd = os.getcwd()
 
-    sys.stdout.write("Generating thumbnails for %s " % filename)
+    out_filename = os.path.splitext(os.path.basename(filename))[0] + ".png"
+    outfile = os.path.join(outd, out_filename).replace(r'\ ', ' ')
 
-    cmd = 'ffprobe %s' % filename
+    if os.path.exists(outfile):
+        print 'WARN %s existes' % os.path.basename(outfile)
+        return -1
+
+    if dry_run:
+        print 'Output writes to %s' % outfile
+        return 0
+
+    # getting duration and frame size
+    cmd = 'ffprobe \'%s\'' % filename
     pipe = sp.Popen(shlex.split(cmd), stdout=sp.PIPE, stderr=sp.STDOUT)
     meta = pipe.stdout.readlines()
-
 
     re_du = re.compile(r'Duration:(.*?),')
     re_size = re.compile(r'(\d{3,})x(\d{3,})')
@@ -39,16 +71,20 @@ def run(filename):
     try:
         assert len(duration) == 1
     except:
-        print duration
-        sys.exit()
+        print 'Can\'t get duration %s' % str(duration)
+        print cmd
+        print meta
+        return -1
     duration = duration[0]
 
     size = [x for x in meta if re_size.search(x) is not None]
     try:
-        assert len(size) == 1
+        assert len(size) >= 1
     except:
-        print size
-        sys.exit()
+        print 'ERR can\'t get size'
+        for s in size:
+            sys.stdout.write(s)
+        return -1
     size = size[0]
 
     hhmmss = re_du.search(duration).group(1).strip()
@@ -67,28 +103,26 @@ def run(filename):
 
     checkpoint[0] += offset
 
-
+    # make temp directory to store tmp pics
     tmpd = tempfile.mkdtemp()
     outputs = [os.path.join(tmpd, "%d.png" % x) for x in xrange(0, num_pics)]
 
-
-
     # Let's take snapshots
+    sys.stdout.write("GEN %s " % filename)
+    sys.stdout.flush()
     procs = []
     for idx, time in enumerate(checkpoint):
-            hh = time/3600
-            mm = (time%3600)/60
-            ss = time%60
-            fill = (hh, mm, ss, filename, outputs[idx])
-            cmd = "ffmpeg -ss %d:%d:%d -i %s -vframes 1 -loglevel error -y %s" % fill
-            #print cmd
-            sys.stdout.write(".")
-            sp.Popen(shlex.split(cmd)).wait()
-
-
-    for proc in procs:
-            pass
-
+        hh = time/3600
+        mm = (time%3600)/60
+        ss = time%60
+        fill = (hh, mm, ss, filename, outputs[idx])
+        cmd = "ffmpeg -ss %d:%d:%d -i '%s' -vframes 1 -loglevel quiet -y %s" % fill
+        sys.stdout.write(".")
+        try:
+            sp.check_call(shlex.split(cmd))
+        except sp.CalledProcessError:
+            print 'ERR unable to run %s' % cmd
+            return -1
 
 
     # Concat
@@ -111,22 +145,33 @@ def run(filename):
                     im.thumbnail((thumb_width, thumb_height))
                     new_im.paste(im, (x,y))
 
+    new_im.save(outfile)
 
-    out_filename = os.path.splitext(os.path.basename(filename))[0] + ".png"
-    new_im.save(os.path.join(outd, out_filename))
     for o in outputs:
             os.remove(o)
 
     sys.stdout.write(' Done.\n')
     sys.stdout.flush()
 
-if len(sys.argv) > 1:
-    for filename in sys.argv[1:]:
-        run(filename)
-else:
-    try:
+
+#---------------- main ------------------#
+try:
+    opts, remainder = getopt.getopt(sys.argv[1:], 'r:c:w:o:n', ['dry-run'])
+    for opt, arg in opts:
+        if opt in ('--dry-run', '-n'):
+            dry_run = True
+except getopt.GetoptError:
+    print 'Usage'
+    sys.exit(-1)
+
+try:
+    if remainder:
+        for filename in remainder:
+            print 'REC enter %s' % os.path.dirname(filename)
+            run(filename)
+    else:
         while True:
             filename = raw_input('Filename: ')
             run(filename)
-    except (EOFError, KeyboardInterrupt):
-        os.sys.stdout.write('\nDone.\n')
+except (EOFError, KeyboardInterrupt):
+    os.sys.stdout.write('\nDone.\n')
