@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# generate thumbnails
 
 from PIL import Image
 from os import listdir
@@ -20,27 +19,32 @@ thumb_width = 360
 offset = 60
 dry_run = False
 recursive = True
+verbose = False
+
+from optparse import OptionParser
 
 
 def run(filename):
-
-    # basename
-    _filename = os.path.basename(filename)
-
-    # recursive if configured
+    # recursion to inner dir
     if os.path.isdir(filename):
-        if recursive:
-            print 'REC enter %s' % filename
+        if options.recur:
+            if options.verbose:
+                print 'REC enter %s' % filename
             for f in os.listdir(filename):
                 ff = os.path.join(filename, f)
-                print 'REC %s' % f
                 run(ff)
-            print 'REC leave %s' % filename
+            if options.verbose:
+                print 'REC leave %s' % filename
+        else:
+            print '%s is a directory' % filename
+        return 0
+
 
     # check support
     ext = os.path.splitext(filename)[1]
-    if ext not in ('.m4v', '.wmv', '.avi', '.mkv', '.mp4'):
-        print 'ERR file %s not supported' % _filename
+    if ext.lower() not in ('.m4v', '.wmv', '.avi', '.mkv', '.mp4'):
+        if options.verbose:
+            print 'ERR file %s not supported' % filename
         return -1
 
     if filename.startswith('/'):
@@ -51,9 +55,13 @@ def run(filename):
     out_filename = os.path.splitext(os.path.basename(filename))[0] + ".png"
     outfile = os.path.join(outd, out_filename).replace(r'\ ', ' ')
 
+    sys.stdout.write("GEN %s " % filename)
+    sys.stdout.flush()
+
     if os.path.exists(outfile):
-        print 'WARN %s existes' % os.path.basename(outfile)
-        return -1
+        if not options.overwrite:
+            print '... skipping...'
+            return 0;
 
     if dry_run:
         print 'Output writes to %s' % outfile
@@ -108,8 +116,6 @@ def run(filename):
     outputs = [os.path.join(tmpd, "%d.png" % x) for x in xrange(0, num_pics)]
 
     # Let's take snapshots
-    sys.stdout.write("GEN %s " % filename)
-    sys.stdout.flush()
     procs = []
     for idx, time in enumerate(checkpoint):
         hh = time/3600
@@ -117,9 +123,12 @@ def run(filename):
         ss = time%60
         fill = (hh, mm, ss, filename, outputs[idx])
         cmd = "ffmpeg -ss %d:%d:%d -i '%s' -vframes 1 -loglevel quiet -y %s" % fill
-        sys.stdout.write(".")
         try:
+            if options.verbose:
+                print 'Running %s' % cmd
             sp.check_call(shlex.split(cmd))
+            sys.stdout.write(".")
+            sys.stdout.flush()
         except sp.CalledProcessError:
             print 'ERR unable to run %s' % cmd
             return -1
@@ -138,36 +147,44 @@ def run(filename):
     new_im = Image.new('RGB', (pic_width, pic_height))
 
     for i in xrange(0, num_row):
-            for j in xrange(0, num_col):
-                    x = int(margin[1] + j*(thumb_width + vspace))
-                    y = int(margin[0] + i*(thumb_height + hspace))
-                    im = Image.open(outputs[i*num_col + j])
-                    im.thumbnail((thumb_width, thumb_height))
-                    new_im.paste(im, (x,y))
+        for j in xrange(0, num_col):
+            x = int(margin[1] + j*(thumb_width + vspace))
+            y = int(margin[0] + i*(thumb_height + hspace))
+            try:
+                im = Image.open(outputs[i*num_col + j])
+            except IOError as e:
+                print e.strerror
+                continue
+            im.thumbnail((thumb_width, thumb_height))
+            new_im.paste(im, (x,y))
 
     new_im.save(outfile)
 
     for o in outputs:
+        try:
             os.remove(o)
+        except OSError as e:
+            continue
 
     sys.stdout.write(' Done.\n')
     sys.stdout.flush()
 
 
 #---------------- main ------------------#
+optparser = OptionParser()
+optparser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False)
+optparser.add_option("-R", action="store_true", dest="recur", default=False)
+optparser.add_option("-O", "--overwrite", action="store_true", dest="overwrite", default=False)
+
 try:
-    opts, remainder = getopt.getopt(sys.argv[1:], 'r:c:w:o:n', ['dry-run'])
-    for opt, arg in opts:
-        if opt in ('--dry-run', '-n'):
-            dry_run = True
-except getopt.GetoptError:
-    print 'Usage'
+    (options, args) = optparser.parse_args()
+except:
+    print 'Usage: python thumbgen.py file1 file2'
     sys.exit(-1)
 
 try:
-    if remainder:
-        for filename in remainder:
-            print 'REC enter %s' % os.path.dirname(filename)
+    if args:
+        for filename in args:
             run(filename)
     else:
         while True:
