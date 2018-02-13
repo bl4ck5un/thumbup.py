@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 num_row = 6
 num_col = 3
 thumb_width = 360
-offset = 60
+offset = 90
 dry_run = False
 recursive = True
 verbose = False
@@ -25,7 +25,8 @@ hspace = 10
 
 def snapshot(job):
     tick, inputname, w, h, outputname = job
-    cmd = "ffmpeg -ss %d -i '%s' -vframes 1 -f image2 -s %dx%d -loglevel quiet -y %s" % (tick, inputname, w, h, outputname)
+    cmd = "ffmpeg -ss %d -i '%s' -vframes 1 -f image2 -s %dx%d -loglevel quiet -y %s" % \
+          (tick, inputname, w, h, outputname)
     try:
         logging.info("running: %s", cmd)
         sp.check_call(shlex.split(cmd))
@@ -39,28 +40,16 @@ def snapshot(job):
 
 
 class Processor:
-    def __init__(self, filepath, overwrite=True, dryrun=False):
-        self.video_fn = filepath
-        self._cfg_overwrite = overwrite
-        self._cfg_dryrun = dryrun
-        self._initialized = False
+    def __init__(self, job, threadpool, overwrite=True, dryrun=False):
+        self.video_fn = job.input
+        self._outdir = job.outdir
+        self.snapshot_fn = job.output
 
-        # check support
-        ext = os.path.splitext(self.video_fn)[1]
-        if ext.lower() not in ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob'):
-            raise Exception('ERR file %s not supported' % self.video_fn)
-
-        if self.video_fn.startswith('/'):
-            self._outdir = os.path.dirname(self.video_fn)
-        else:
-            self._outdir = os.getcwd()
-
-        snapshot_fn = os.path.splitext(os.path.basename(self.video_fn))[0] + ".jpg"
-        # I don't know what this is doing...
-        self.snapshot_fn = os.path.join(self._outdir, snapshot_fn).replace(r'\ ', ' ')
+        self.threadpool = threadpool
 
         self._probe_result = None
-        self._initialized = True
+        self._cfg_overwrite = overwrite
+        self._cfg_dryrun = dryrun
 
     def _get_duration(self):
         """
@@ -111,8 +100,6 @@ class Processor:
             raise Exception("%s: can't parse JSON: %s" % (' '.join(command), out))
 
     def run(self):
-        if not self._initialized:
-            return
         sys.stdout.write("GEN %s " % self.video_fn)
         sys.stdout.flush()
 
@@ -143,12 +130,9 @@ class Processor:
         for idx, time in enumerate(checkpoint):
             jobs.append((time, self.video_fn, thumb_width, thumb_height, small_thumbnails[idx]))
 
-        count = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(processes=count)
-        pool.map(snapshot, jobs)
+        self.threadpool.map(snapshot, jobs)
 
         # Concat
-
         pic_height = int(num_row * thumb_height + 2 * margin[0] + vspace * (num_row - 1))
         pic_width = int(num_col * thumb_width + 2 * margin[1] + hspace * (num_col - 1))
 
@@ -184,3 +168,5 @@ class Processor:
                 os.remove(o)
             except OSError as e:
                 continue
+
+        sys.stdout.write('\n')
