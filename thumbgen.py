@@ -13,6 +13,7 @@ optparser = OptionParser()
 optparser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False)
 optparser.add_option("-R", action="store_true", dest="recur", default=False)
 optparser.add_option("-O", "--overwrite", action="store_true", dest="overwrite", default=False)
+optparser.add_option("--offset", action="store", dest="offset", type="int", default=60, metavar="OFFSET")
 
 
 try:
@@ -36,7 +37,7 @@ pool = multiprocessing.Pool(processes=count)
 
 for j in jobs:
     try:
-        Processor.Processor(j, pool, options.overwrite).run()
+        Processor.Processor(j, pool, options).run()
     except KeyboardInterrupt:
         sys.exit(0)
     except:

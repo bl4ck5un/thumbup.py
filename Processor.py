@@ -12,7 +12,6 @@ from PIL import Image, ImageDraw, ImageFont
 num_row = 6
 num_col = 3
 thumb_width = 360
-offset = 90
 dry_run = False
 recursive = True
 verbose = False
@@ -40,16 +39,20 @@ def snapshot(job):
 
 
 class Processor:
-    def __init__(self, job, threadpool, overwrite=True, dryrun=False):
+    def __init__(self, job, threadpool, options):
+        # input and output
         self.video_fn = job.input
         self._outdir = job.outdir
         self.snapshot_fn = job.output
 
+        # snapshot options
+        self.offset = options.offset
+
         self.threadpool = threadpool
 
         self._probe_result = None
-        self._cfg_overwrite = overwrite
-        self._cfg_dryrun = dryrun
+        self._cfg_overwrite = options.overwrite
+        self._cfg_dryrun = options.dryrun
 
     def _get_duration(self):
         """
@@ -120,7 +123,7 @@ class Processor:
         num_pics = num_row * num_col
         checkpoint = [int(math.floor(duration * x / num_pics)) for x in xrange(0, num_pics)]
 
-        checkpoint[0] += offset
+        checkpoint[0] += self.offset
 
         # make temp directory to store tmp pics
         tmpd = tempfile.mkdtemp()
