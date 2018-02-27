@@ -12,7 +12,6 @@ from PIL import Image, ImageDraw, ImageFont
 num_row = 6
 num_col = 3
 thumb_width = 360
-dry_run = False
 recursive = True
 verbose = False
 
@@ -52,7 +51,6 @@ class Processor:
 
         self._probe_result = None
         self._cfg_overwrite = options.overwrite
-        self._cfg_dryrun = options.dryrun
 
     def _get_duration(self):
         """
@@ -108,10 +106,6 @@ class Processor:
 
         if os.path.exists(self.snapshot_fn) and not self._cfg_overwrite:
             print '... skipping...'
-            return 0
-
-        if dry_run:
-            print 'Output writes to %s' % self.video_fn
             return 0
 
         duration = self._get_duration()

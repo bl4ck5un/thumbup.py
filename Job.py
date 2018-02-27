@@ -5,7 +5,6 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
 
-
 class Job:
     def __init__(self, input):
         self.input = input
