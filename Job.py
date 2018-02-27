@@ -2,8 +2,13 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
+
 
 class Job:
     def __init__(self, input):
@@ -47,8 +52,8 @@ def _dir_scanner_internal(filename, options, joblist):
                 logger.info('REC leaving %s', filename)
         else:
             logger.error('%s is a directory', filename)
-
-    joblist.append(Job(filename))
+    else:
+        joblist.append(Job(filename))
 
 
 def dir_scanner(filename, options):
@@ -56,7 +61,7 @@ def dir_scanner(filename, options):
     generate a list of jobs as follows: if filename is a supported video file, that will be the only job;
     if @filename is a directory, then recursively add video files in the subdirs to the list.
     :param filename:
-    :return:
+    :return: a list of jobs
     """
 
     joblist = []
