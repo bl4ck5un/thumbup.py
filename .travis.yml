@@ -1,0 +1,8 @@
+deploy:
+  provider: pypi
+  user: bl4ck5un
+  password:
+    secure: UMvtbWvMmxw5dlBCQmLomt1c7dsEqesLDoEM+6lmdCmfztkN5RnpfGZyEtAzqXT8+koNVdpCTYggPYy+gNLLZpL74S0xTwruO3NsmKJ+eZcq7L7u094AXxm/EP0HIe/eWhJvcruViORwmId1PFI2DatvMUApNmZ2jWQYKv30ja/1LJRXEBd8BPLZ/PfCZzdxCz/To9fbx+a+4CSIqldfQ1xdq37ZolWdg5jpc0vELGGdsfShhELZsR9vPVH2yIuHPn1vYt5U61rfk5OhYr3L/W1rNX1ezTRTBCb/Pog6MOPeqy5tpX+U0vIFdlUwA0zbGWYX4ob/k222rzNtqelbsVU0e3MfPsLne7urdZjQvdHeh9765s19ia9w9HXwXZ/Rl9O6taytM+H92PsJov+VjEZEbDD9a7jbSnkuEoTUS0Rq6o5hLStPJJfKupnI1nTLiTj2oC9le+Lwwh6me3ntfpyf+lNPDtu53QXp+1RJ1rrgoYk8TNhIXMCYjpirUbS5r8af7fjkdX0KjWB1dx9ndmmv17aifEmlmwUsB7oo9oMs/t0TzMB9XrLHO6l+U/IeyLvd5xhwKG/XLM1VSMUKqANN8NgNSTSMhrZsPbbbm10oekOzzCArunsKqlf2UlAuqyyqdTJfCuu0epf8LNGLe+wFPj4bM7Tjjh02oadTE9Y=
+  on:
+    tags: true
+  distributions: "bdist_wheel"
