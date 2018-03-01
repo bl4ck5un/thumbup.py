@@ -137,7 +137,7 @@ class Processor:
         output_img = Image.new(mode='RGB', size=(pic_width, pic_height), color='white')
 
         # load font
-        font = ImageFont.truetype("arial.ttf", 15)
+        # font = ImageFont.truetype("arial.ttf", 15)
 
         for i in xrange(0, num_row):
             for j in xrange(0, num_col):
@@ -150,7 +150,7 @@ class Processor:
                     import datetime
                     tick = checkpoint[i * num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)), font=font)
+                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)))#, font=font)
                     del draw
                 except IOError as e:
                     print e.strerror
