@@ -5,7 +5,8 @@ thumbup
     :alt: pypi
     :target: https://badge.fury.io/py/thumbup
 
-.. image:: https://img.shields.io/github/license/mashape/apistatus.svg   :alt: license
+.. image:: https://img.shields.io/github/license/mashape/apistatus.svg
+    :alt: license
 
 
 video thumbnails generator written in Python, based on ffmpeg.
