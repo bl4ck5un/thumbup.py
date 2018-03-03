@@ -9,7 +9,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='thumbup',
-    version='0.2.0rc1',
+    version='0.2.0rc2',
     description='a convenient video thumbnails generator, based on ffmpeg',
     long_description=long_description,
     url='https://github.com/bl4ck5un/thumbup.py',
