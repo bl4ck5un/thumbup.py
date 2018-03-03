@@ -9,13 +9,13 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='thumbup',
-    version='0.2.0rc2',
-    description='a convenient video thumbnails generator, based on ffmpeg',
+    version='0.2.0',
+    description='A convenient video thumbnails generator.',
     long_description=long_description,
     url='https://github.com/bl4ck5un/thumbup.py',
     author='Fan Zhang',
     author_email='bl4ck5unxx@gmail.com',
-    classifiers=[  # Optional
+    classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: End Users/Desktop',
         'Topic :: Multimedia :: Video',
