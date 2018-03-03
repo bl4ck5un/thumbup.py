@@ -4,7 +4,6 @@ thumbup
 .. image:: https://badge.fury.io/py/thumbup.svg
     :alt: pypi
     :target: https://badge.fury.io/py/thumbup
-
 .. image:: https://img.shields.io/github/license/mashape/apistatus.svg
     :alt: license
 
