@@ -9,7 +9,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='thumbup',
-    version='0.2.0',
+    version='0.2.1',
     description='A convenient video thumbnails generator.',
     long_description=long_description,
     url='https://github.com/bl4ck5un/thumbup.py',
@@ -26,7 +26,7 @@ setup(
     ],
     keywords='video thumbnail snapshot',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['pillow', 'av'],
+    install_requires=['Pillow', 'av'],
     entry_points={
         'console_scripts': [
             'thumbup=thumbup.thumbup:main',
