@@ -8,7 +8,7 @@ thumbup
     :target: https://opensource.org/licenses/MIT
 
 
-video thumbnails generator written in Python, based on ffmpeg.
+``thumbup`` is a command-line video thumbnails generator written in Python.
 
 Getting thumbup
 ---------------
