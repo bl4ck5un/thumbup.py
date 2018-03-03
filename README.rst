@@ -1,5 +1,12 @@
 thumbup
 =======
+.. image:: https://badge.fury.io/py/thumbup.svg
+    :alt: pypi
+    :target: https://badge.fury.io/py/thumbup
+.. image:: https://img.shields.io/github/license/mashape/apistatus.svg
+    :alt: license
+    :target: https://opensource.org/licenses/MIT
+
 
 video thumbnails generator written in Python, based on ffmpeg.
 
