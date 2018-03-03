@@ -2,13 +2,8 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
-ch = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
 SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
-
 
 class Job:
     def __init__(self, input):
@@ -36,6 +31,10 @@ def _dir_scanner_internal(filename, options, joblist):
     ext = os.path.splitext(filename)[1]
 
     # if the extension is not supported, return immediately
+    if os.path.basename(filename).startswith('.'):
+        return
+    if ext.lower() == '.jpg':
+        return
     if not os.path.isdir(filename) and ext.lower() not in SUPPORTED_EXT:
         logger.error("%s is not supported", filename)
         return

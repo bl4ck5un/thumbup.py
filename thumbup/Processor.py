@@ -1,12 +1,8 @@
 import os
-import subprocess as sp
-import json
-import math
 import logging
-import sys
 import tempfile
-import shlex
-import multiprocessing
+
+import av
 from PIL import Image, ImageDraw, ImageFont
 
 num_row = 6
@@ -20,25 +16,31 @@ margin = (20, 20)
 vspace = 10
 hspace = 10
 
+logger = logging.getLogger(__name__)
 
-def snapshot(job):
-    tick, inputname, w, h, outputname = job
-    cmd = "ffmpeg -ss %d -i '%s' -vframes 1 -f image2 -s %dx%d -loglevel quiet -y %s" % \
-          (tick, inputname, w, h, outputname)
-    try:
-        logging.info("running: %s", cmd)
-        sp.check_call(shlex.split(cmd))
-        sys.stdout.write(".")
-        sys.stdout.flush()
-    except sp.CalledProcessError as e:
-        print 'ERR unable to run %s, msg: %s' % (cmd, e.message)
-        print e.output
-        print e.returncode
-        return -1
+
+def snapshot(work):
+    tick, input_filename, output_filename = work
+    av_container = av.open(input_filename)
+    av_container.seek(tick * 1000000, 'time')
+    frame = av_container.decode(video=0).next()
+    im = frame.to_image()
+    im.save(output_filename)
 
 
 class Processor:
-    def __init__(self, job, threadpool, options):
+    """
+    Processor
+    """
+
+    def __init__(self, job, pool, options):
+        """ create a Processor instance for job
+        :param job
+        :type :class:`thumbup.Job`
+        :param pool
+        :type a thread pool
+        :param options:
+        """
         # input and output
         self.video_fn = job.input
         self._outdir = job.outdir
@@ -47,123 +49,103 @@ class Processor:
         # snapshot options
         self.offset = options.offset
 
-        self.threadpool = threadpool
-
         self._probe_result = None
         self._cfg_overwrite = options.overwrite
 
-    def _get_duration(self):
-        """
-        :return: the duration in seconds
-        """
-        if not self._probe_result:
-            self.probe()
+        # open an av container
+        # https://mikeboers.github.io/PyAV/api/container.html
+        self._av_container = None
+        self._threadpool = pool
 
-        return int(float(self._probe_result["format"]["duration"]))
-
-    def _get_dimension(self):
-        """
-        :return: the dimension in (width, height)
-        """
-        if not self._probe_result:
-            self.probe()
-
-        streams = self._probe_result["streams"]
-        assert streams
-
-        video_streams = filter(lambda x: x["codec_type"] == "video", streams)
-        if len(video_streams) > 1:
-            logging.warn("%d streams detected", len(video_streams))
-
-        video_streams = video_streams[0]
-        return map(int, (video_streams["width"], video_streams["height"]))
-
-    def probe(self):
-        if not os.path.exists(self.video_fn):
-            raise Exception('Gvie ffprobe a full file path of the video')
-
-        command = ["ffprobe",
-                   "-loglevel", "quiet",
-                   "-print_format", "json",
-                   "-show_format",
-                   "-show_streams",
-                   self.video_fn
-                   ]
-
-        pipe = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT)
-        out, err = pipe.communicate()
-        if (err):
-            print err
-            raise Exception(err)
+    def _get_desc(self):
         try:
-            self._probe_result = json.loads(out)
-        except:
-            raise Exception("%s: can't parse JSON: %s" % (' '.join(command), out))
+            vs = self._av_container.streams.video[0]
+            dim = '%dx%d' % (vs.width, vs.height)
+            codec = '%s, %s' % (vs.name, self._av_container.streams.audio[0].name)
+        except av.utils.AVError:
+            codec = 'N/A'
+            dim = 'N/A'
+        return """Filename: %s\nCodec: %s (%s)\n""" % (os.path.basename(self.video_fn), codec, dim)
 
-    def run(self):
-        sys.stdout.write("GEN %s " % self.video_fn)
-        sys.stdout.flush()
+    def run_noexcept(self):
+        try:
+            self._run()
+        except Exception as e:
+            print e.message
+            return -1
+
+    def _run(self):
+        """ execute the processor in one thread
+
+        :return: None
+        """
+        logger.info("Processing %s" % os.path.basename(self.video_fn))
 
         if os.path.exists(self.snapshot_fn) and not self._cfg_overwrite:
-            print '... skipping...'
+            logging.info("skipping...")
             return 0
 
-        duration = self._get_duration()
-        (video_width, video_height) = self._get_dimension()
+        if not self._av_container:
+            self._av_container = av.open(self.video_fn)
+
+        duration = self._av_container.duration / 1e6
+        vs = self._av_container.streams.video[0]
+        (video_width, video_height) = vs.width, vs.height
 
         # calculate the thumbnail height in respect to the aspect ratio
-        thumb_height = int(thumb_width * video_height / video_width)
+        thumb_h = int(thumb_width * video_height / video_width)
 
+        # calculate the time (in seconds)
         num_pics = num_row * num_col
-        checkpoint = [int(math.floor(duration * x / num_pics)) for x in xrange(0, num_pics)]
-
-        checkpoint[0] += self.offset
+        step = (duration - self.offset) / num_pics
+        snapshot_time_list = [int(self.offset + x * step) for x in xrange(0, num_pics)]
 
         # make temp directory to store tmp pics
-        tmpd = tempfile.mkdtemp()
-        small_thumbnails = [os.path.join(tmpd, "%d.jpg" % x) for x in xrange(0, num_pics)]
+        tmp_dir = tempfile.mkdtemp()
+        thumbnail_filename_list = [os.path.join(tmp_dir, "%d.jpg" % x) for x in xrange(0, num_pics)]
 
-        jobs = []
-        for idx, time in enumerate(checkpoint):
-            jobs.append((time, self.video_fn, thumb_width, thumb_height, small_thumbnails[idx]))
+        # taking snapshot in many threads
+        works = [(time, self.video_fn, thumbnail_filename_list[idx]) for idx, time in enumerate(snapshot_time_list)]
+        self._threadpool.map(snapshot, works)
 
-        self.threadpool.map(snapshot, jobs)
-
-        # Concat
-        pic_height = int(num_row * thumb_height + 2 * margin[0] + vspace * (num_row - 1))
+        # Concat thumbnails
+        pic_height = int(num_row * thumb_h + 2 * margin[0] + vspace * (num_row - 1))
         pic_width = int(num_col * thumb_width + 2 * margin[1] + hspace * (num_col - 1))
 
         # create a new image
         output_img = Image.new(mode='RGB', size=(pic_width, pic_height), color='white')
 
         # load font
-        # font = ImageFont.truetype("arial.ttf", 15)
+        font = ImageFont.load_default()
+
+        output_draw = ImageDraw.Draw(output_img)
+        output_draw.text((margin[1], margin[0]), text=self._get_desc(), fill=(0, 0, 0), font=font)
+
+        y_offset_for_text = 50
 
         for i in xrange(0, num_row):
             for j in xrange(0, num_col):
                 x = int(margin[1] + j * (thumb_width + vspace))
-                y = int(margin[0] + i * (thumb_height + hspace))
+                y = int(margin[0] + y_offset_for_text + i * (thumb_h + hspace))
                 try:
-                    im = Image.open(small_thumbnails[i * num_col + j])
+                    im = Image.open(thumbnail_filename_list[i * num_col + j])
+                    im.thumbnail((thumb_width, thumb_h))
 
                     # add text to small thumbnails
                     import datetime
-                    tick = checkpoint[i * num_col + j]
+                    tick = snapshot_time_list[i * num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)))#, font=font)
+                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)), font=font)
                     del draw
                 except IOError as e:
                     print e.strerror
                     continue
-                im.thumbnail((thumb_width, thumb_height))
                 output_img.paste(im, (x, y))
 
         output_img.save(self.snapshot_fn)
 
-        for o in small_thumbnails:
+        for o in thumbnail_filename_list:
             try:
                 os.remove(o)
             except OSError as e:
                 continue
-
-        sys.stdout.write('\n')

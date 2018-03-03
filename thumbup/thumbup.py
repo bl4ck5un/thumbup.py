@@ -1,49 +1,56 @@
 #!/usr/bin/env python
 
-import sys
+
 import Job
+import Processor
+
+import logging
+import sys
+import multiprocessing
 from optparse import OptionParser
 
-import multiprocessing
-import Processor
+import argparse
+
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+logger = logging.getLogger('main')
 
 
 def main():
-    optparser = OptionParser()
-    optparser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False)
-    optparser.add_option("-R", action="store_true", dest="recur", default=False)
-    optparser.add_option("-O", "--overwrite", action="store_true", dest="overwrite", default=False)
-    optparser.add_option("--offset", action="store", dest="offset", type="int", default=60, metavar="OFFSET")
+    """The main function of thumbup.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', metavar='FILE', nargs='+',
+                        help='one or more video files or directories (with -R)')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False,
+                        help='logging more stuff')
+    parser.add_argument('-r', '--rec', dest='recur', action='store_true', default=False,
+                        help='recursively go into all dirs')
+    parser.add_argument('-o', '--overwrite', dest='overwrite', action='store_true', default=False,
+                        help='overwrite existing thumbnails')
+    parser.add_argument('--offset', dest='offset', metavar='OFFSET', type=int, default=60,
+                        help='skip OFFSET (sec) from the beginning')
 
-    try:
-        (options, args) = optparser.parse_args()
-        assert args
-    except:
-        print 'Usage: python thumbup.py file1 file2'
-        sys.exit(-1)
+    options = parser.parse_args()
 
     jobs = []
 
     try:
-        for filename in args:
+        for filename in options.input:
             jobs += Job.dir_scanner(filename, options)
     except:
         print 'Cannot parse input'
         sys.exit(-1)
 
-    count = multiprocessing.cpu_count()
-    pool = multiprocessing.Pool(processes=count)
+    logger.info('collected %d jobs' % len(jobs))
 
-    for j in jobs:
-        try:
-            Processor.Processor(j, pool, options).run()
-        except KeyboardInterrupt:
-            sys.exit(0)
-        except Exception as e:
-            print e.message
-            continue
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    procs = [Processor.Processor(j, pool, options) for j in jobs]
 
-    print('Done.')
+    for idx, p in enumerate(procs):
+        print '[%d / %d]' % (idx, len(procs))
+        p.run_noexcept()
+
+    logger.info('Done.')
 
 
 if __name__ == '__main__':
