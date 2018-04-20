@@ -9,8 +9,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='thumbup',
-    version='0.2.1',
+    version='0.2.2',
     description='A convenient video thumbnails generator.',
+    license='MIT',
     long_description=long_description,
     url='https://github.com/bl4ck5un/thumbup.py',
     author='Fan Zhang',

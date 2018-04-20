@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 import argparse
 
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger('main')
 
 
@@ -20,7 +20,7 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('input', metavar='FILE', nargs='+',
-                        help='one or more video files or directories (with -R)')
+                        help='one or more video files or directories (with -r)')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False,
                         help='logging more stuff')
     parser.add_argument('-r', '--rec', dest='recur', action='store_true', default=False,
@@ -37,8 +37,8 @@ def main():
     try:
         for filename in options.input:
             jobs += Job.dir_scanner(filename, options)
-    except:
-        print 'Cannot parse input'
+    except Exception as e:
+        print 'Cannot parse input', str(e)
         sys.exit(-1)
 
     logger.info('collected %d jobs' % len(jobs))
