@@ -7,8 +7,6 @@ import Processor
 import logging
 import sys
 import multiprocessing
-from optparse import OptionParser
-
 import argparse
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -32,6 +30,9 @@ def main():
 
     options = parser.parse_args()
 
+    if options.verbose:
+        logger.setLevel(logging.DEBUG)
+
     jobs = []
 
     try:
@@ -47,7 +48,7 @@ def main():
     procs = [Processor.Processor(j, pool, options) for j in jobs]
 
     for idx, p in enumerate(procs):
-        print '[%d / %d]' % (idx, len(procs))
+        logging.info('[%d / %d]' % (idx, len(procs)))
         p.run_noexcept()
 
     logger.info('Done.')

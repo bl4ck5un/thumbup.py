@@ -1,20 +1,10 @@
 import os
 import logging
 import tempfile
+import datetime
 
 import av
-from PIL import Image, ImageDraw, ImageFont
-
-num_row = 6
-num_col = 3
-thumb_width = 360
-recursive = True
-verbose = False
-
-# up (down), left(right)
-margin = (20, 20)
-vspace = 10
-hspace = 10
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +19,14 @@ def snapshot(work):
 
 
 class Processor:
-    """
-    Processor
-    """
+    num_row = 6
+    num_col = 3
+    thumb_width = 480
+
+    # up (down), left(right)
+    margin = (20, 20)
+    vspace = 15
+    hspace = 15
 
     def __init__(self, job, pool, options):
         """ create a Processor instance for job
@@ -82,7 +77,7 @@ class Processor:
         logger.info("Processing %s" % os.path.basename(self.video_fn))
 
         if os.path.exists(self.snapshot_fn) and not self._cfg_overwrite:
-            logging.info("skipping...")
+            logging.info("Thumbnail exists. Skipping... [use -o to overwrite]")
             return 0
 
         if not self._av_container:
@@ -93,10 +88,10 @@ class Processor:
         (video_width, video_height) = vs.width, vs.height
 
         # calculate the thumbnail height in respect to the aspect ratio
-        thumb_h = int(thumb_width * video_height / video_width)
+        thumb_h = int(self.thumb_width * video_height / video_width)
 
         # calculate the time (in seconds)
-        num_pics = num_row * num_col
+        num_pics = self.num_row * self.num_col
         step = (duration - self.offset) / num_pics
         snapshot_time_list = [int(self.offset + x * step) for x in xrange(0, num_pics)]
 
@@ -109,33 +104,36 @@ class Processor:
         self._threadpool.map(snapshot, works)
 
         # Concat thumbnails
-        pic_height = int(num_row * thumb_h + 2 * margin[0] + vspace * (num_row - 1))
-        pic_width = int(num_col * thumb_width + 2 * margin[1] + hspace * (num_col - 1))
+        pic_height = int(self.num_row * thumb_h + 2 * self.margin[0] + self.vspace * (self.num_row - 1))
+        pic_width = int(self.num_col * self.thumb_width + 2 * self.margin[1] + self.hspace * (self.num_col - 1))
 
         # create a new image
         output_img = Image.new(mode='RGB', size=(pic_width, pic_height), color='white')
 
         # load font
-        font = ImageFont.load_default()
+        try:
+            font = ImageFont.truetype('Roboto-Regular.ttf', size=15)
+        except IOError:
+            font = ImageFont.load_default()
 
         output_draw = ImageDraw.Draw(output_img)
-        output_draw.text((margin[1], margin[0]), text=self._get_desc(), fill=(0, 0, 0), font=font)
+        output_draw.text((self.margin[1], self.margin[0]), text=self._get_desc(), fill=(0, 0, 0), font=font)
 
         y_offset_for_text = 50
 
-        for i in xrange(0, num_row):
-            for j in xrange(0, num_col):
-                x = int(margin[1] + j * (thumb_width + vspace))
-                y = int(margin[0] + y_offset_for_text + i * (thumb_h + hspace))
+        for i in xrange(0, self.num_row):
+            for j in xrange(0, self.num_col):
+                x = int(self.margin[1] + j * (self.thumb_width + self.vspace))
+                y = int(self.margin[0] + y_offset_for_text + i * (thumb_h + self.hspace))
                 try:
-                    im = Image.open(thumbnail_filename_list[i * num_col + j])
-                    im.thumbnail((thumb_width, thumb_h))
+                    im = Image.open(thumbnail_filename_list[i * self.num_col + j])
+                    im.thumbnail((self.thumb_width, thumb_h))
+                    im = ImageOps.expand(im, border=2, fill='#aaa')
 
                     # add text to small thumbnails
-                    import datetime
-                    tick = snapshot_time_list[i * num_col + j]
+                    tick = snapshot_time_list[i * self.num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)), font=font)
+                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)), font=font, fill='black')
                     del draw
                 except IOError as e:
                     print e.strerror

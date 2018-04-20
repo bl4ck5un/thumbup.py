@@ -3,9 +3,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
 
 class Job:
+    SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
+
     def __init__(self, input):
         self.input = input
 
@@ -23,6 +24,9 @@ class Job:
 
 
 def _dir_scanner_internal(filename, options, joblist):
+    if options.verbose:
+        logger.setLevel(logging.DEBUG)
+
     # make sure filename is an absolute path
     if not filename.startswith('/'):
         filename = os.path.join(os.getcwd(), filename)
@@ -35,20 +39,18 @@ def _dir_scanner_internal(filename, options, joblist):
         return
     if ext.lower() == '.jpg':
         return
-    if not os.path.isdir(filename) and ext.lower() not in SUPPORTED_EXT:
-        logger.error("%s is not supported", filename)
+    if not os.path.isdir(filename) and ext.lower() not in Job.SUPPORTED_EXT:
+        logger.debug("ignoring %s (unsupported)", filename)
         return
 
     # recursively scan subdirs
     if os.path.isdir(filename):
         if options.recur:
-            if options.verbose:
-                logger.info('REC enter %s', filename)
+            logger.debug('REC enter %s', filename)
             for f in os.listdir(filename):
                 ff = os.path.join(filename, f)
                 _dir_scanner_internal(ff, options, joblist)
-            if options.verbose:
-                logger.info('REC leaving %s', filename)
+            logger.debug('REC leaving %s', filename)
         else:
             logger.error('%s is a directory', filename)
     else:
