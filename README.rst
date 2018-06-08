@@ -6,6 +6,9 @@ thumbup
 .. image:: https://img.shields.io/github/license/mashape/apistatus.svg
     :alt: license
     :target: https://opensource.org/licenses/MIT
+.. image:: https://travis-ci.org/bl4ck5un/thumbup.py.svg?branch=master
+    :alt: travis-ci
+    :target: https://travis-ci.org/bl4ck5un/thumbup.py
 
 
 ``thumbup`` is a command-line video thumbnails generator written in Python.
