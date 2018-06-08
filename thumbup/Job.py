@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class Job:
     SUPPORTED_EXT = ('.m4v', '.wmv', '.avi', '.mkv', '.mp4', '.vob')
 
-    def __init__(self, input):
+    def __init__(self, input, option):
         self.input = input
 
         if input.startswith('/'):
@@ -15,7 +15,11 @@ class Job:
         else:
             self.outdir = os.getcwd()
 
-        output = os.path.splitext(os.path.basename(input))[0] + ".jpg"
+        if option.suffix != "":
+            suffix = "_" + option.suffix
+        else:
+            suffix = ""
+        output = os.path.splitext(os.path.basename(input))[0] + suffix + ".jpg"
         # I don't know what this is doing...
         self.output = os.path.join(self.outdir, output).replace(r'\ ', ' ')
 
@@ -54,7 +58,7 @@ def _dir_scanner_internal(filename, options, joblist):
         else:
             logger.error('%s is a directory', filename)
     else:
-        joblist.append(Job(filename))
+        joblist.append(Job(filename, options))
 
 
 def dir_scanner(filename, options):

@@ -27,6 +27,8 @@ def main():
                         help='overwrite existing thumbnails')
     parser.add_argument('--offset', dest='offset', metavar='OFFSET', type=int, default=60,
                         help='skip OFFSET (sec) from the beginning')
+    parser.add_argument('-s', '--suffix', dest='suffix', metavar='SUF', type=str, default="",
+                        help="add suffix to the output filename, input.mp4 -> inputSUF.jpg")
 
     options = parser.parse_args()
 
