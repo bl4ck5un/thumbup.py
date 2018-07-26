@@ -60,7 +60,7 @@ Full help message for more control:
 
     usage: thumbup.py [-h] [-v] [-r] [-f] [-o OFFSET] [-s X] FILE [FILE ...]
 
-    thumbup video thumbnail generator v1.0.0
+    thumbup video thumbnail generator v1.0.1
 
     positional arguments:
       FILE                  one or more video files or directories (with -r)
