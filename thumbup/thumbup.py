@@ -16,7 +16,7 @@ logger = logging.getLogger('main')
 def main():
     """The main function of thumbup.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="thumbup video thumbnail generator v%s" % version)
     parser.add_argument('input', metavar='FILE', nargs='+',
                         help='one or more video files or directories (with -r)')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False,
@@ -27,8 +27,8 @@ def main():
                         help='force overwrite existing thumbnails')
     parser.add_argument('-o', '--offset', dest='offset', metavar='OFFSET', type=str, default="60",
                         help='skip OFFSET (hh:mm:ss.ms or second) from the beginning')
-    parser.add_argument('-s', '--suffix', dest='suffix', metavar='SUF', type=str, default="",
-                        help="add suffix to the output filename, input.mp4 -> inputSUF.jpg")
+    parser.add_argument('-s', '--suffix', dest='suffix', metavar='X', type=str, default="",
+                        help="add suffix to the output filename, input.mp4 -> inputX.jpg")
 
     options = parser.parse_args()
 
