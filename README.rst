@@ -1,5 +1,5 @@
-thumbup
-=======
+thumbup :thumbsup:
+==================
 .. image:: https://badge.fury.io/py/thumbup.svg
     :alt: pypi
     :target: https://badge.fury.io/py/thumbup
@@ -28,7 +28,7 @@ You'll need ``ffmpeg`` before you can use ``thumbup``, which can be installed by
     libavformat-dev libavcodec-dev libavdevice-dev \
     libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
   
-``ffmpeg`` is also widely available for many other distros. Please refer to the official website https://www.ffmpeg.org/download.html.
+``ffmpeg`` is also widely available for many other distros. Please refer to the official website https://www.ffmpeg.org.
 
 ``thumbup`` can be installed from ``pip`` by
 
@@ -39,16 +39,36 @@ You'll need ``ffmpeg`` before you can use ``thumbup``, which can be installed by
 Usage
 -----
 
-To generate thumbnails for video files, use
+To generate thumbnails for video files ``file1`` and ``file2``, simply use
 
 .. code-block::
 
   thumbup file1 file2
 
-The above will create ``file1.jpg`` and ``file2.jpg``.
+The above will create ``file1.jpg`` and ``file2.jpg`` in the same directory as the video files.
 
-To generate thumbnails for all video files in directory ``dir``, use ``-R`` option. ``thumbup`` will recursively go through every video in directory ``dir`` and generate thumbnails next to them.
+To generate thumbnails for all video files in directory ``dir``, use ``-r`` option. ``thumbup`` will recursively go through every video in directory ``dir`` and generate thumbnails next to them.
 
 .. code-block::
 
-  thumbup -R dir
+  thumbup -r dir
+
+Full help message for more control:
+
+
+.. code-block::
+
+    usage: thumbup [-h] [-v] [-r] [-f] [-o OFFSET] [-s SUF] FILE [FILE ...]
+
+    positional arguments:
+      FILE                  one or more video files or directories (with -r)
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -v, --verbose         logging more stuff
+      -r, --rec             recursively go into all dirs
+      -f, --force           force overwrite existing thumbnails
+      -o OFFSET, --offset OFFSET
+                            skip OFFSET (hh:mm:ss.ms or second) from the beginning
+      -s SUF, --suffix SUF  add suffix to the output filename, input.mp4 ->
+                            inputSUF.jpg
