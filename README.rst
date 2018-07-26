@@ -58,7 +58,9 @@ Full help message for more control:
 
 .. code-block::
 
-    usage: thumbup [-h] [-v] [-r] [-f] [-o OFFSET] [-s SUF] FILE [FILE ...]
+    usage: thumbup.py [-h] [-v] [-r] [-f] [-o OFFSET] [-s X] FILE [FILE ...]
+
+    thumbup video thumbnail generator v1.0.0
 
     positional arguments:
       FILE                  one or more video files or directories (with -r)
@@ -70,5 +72,5 @@ Full help message for more control:
       -f, --force           force overwrite existing thumbnails
       -o OFFSET, --offset OFFSET
                             skip OFFSET (hh:mm:ss.ms or second) from the beginning
-      -s SUF, --suffix SUF  add suffix to the output filename, input.mp4 ->
-                            inputSUF.jpg
+      -s X, --suffix X      add suffix to the output filename, input.mp4 ->
+                            inputX.jpg
