@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 
+import argparse
+import logging
+import multiprocessing
+import sys
+
 import Job
 import Processor
-
-import logging
-import sys
-import multiprocessing
-import argparse
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger('main')
@@ -23,10 +23,10 @@ def main():
                         help='logging more stuff')
     parser.add_argument('-r', '--rec', dest='recur', action='store_true', default=False,
                         help='recursively go into all dirs')
-    parser.add_argument('-o', '--overwrite', dest='overwrite', action='store_true', default=False,
-                        help='overwrite existing thumbnails')
-    parser.add_argument('--offset', dest='offset', metavar='OFFSET', type=int, default=60,
-                        help='skip OFFSET (sec) from the beginning')
+    parser.add_argument('-f', '--force', dest='overwrite', action='store_true', default=False,
+                        help='force overwrite existing thumbnails')
+    parser.add_argument('-o', '--offset', dest='offset', metavar='OFFSET', type=str, default="60",
+                        help='skip OFFSET (hh:mm:ss.ms or second) from the beginning')
     parser.add_argument('-s', '--suffix', dest='suffix', metavar='SUF', type=str, default="",
                         help="add suffix to the output filename, input.mp4 -> inputSUF.jpg")
 

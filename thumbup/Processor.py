@@ -1,7 +1,7 @@
-import os
-import logging
-import tempfile
 import datetime
+import logging
+import os
+import tempfile
 
 import av
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 def snapshot(work):
-    tick, input_filename, output_filename = work
+    microseconds, input_filename, output_filename = work
     av_container = av.open(input_filename)
-    av_container.seek(tick * 1000000, 'time')
+    av_container.seek(microseconds, 'time')
     frame = av_container.decode(video=0).next()
     im = frame.to_image()
     im.save(output_filename)
@@ -42,7 +42,38 @@ class Processor:
         self.snapshot_fn = job.output
 
         # snapshot options
-        self.offset = options.offset
+
+        # Parse the offset (string)
+        def parse_second(string):
+            return 1e6 * int(string)
+
+        def _parse_date_str(fmt, string):
+            # parse fmt to microseconds
+            offset_obj = datetime.datetime.strptime(string, fmt).time()
+            # 3600 * seconds + microseconds
+            return 1e6 * (offset_obj.hour * 3600 + offset_obj.minute * 60 + offset_obj.second) \
+                   + offset_obj.microsecond
+
+        def parse_h_m_s(string):
+            # parse "%H:%M:%S.%f" to microseconds
+            return _parse_date_str("%H:%M:%S", string)
+
+        def parse_h_m_s_ms(string):
+            # parse "%H:%M:%S.%f" to microseconds
+            return _parse_date_str("%H:%M:%S.%f", string)
+
+        for i, parser in enumerate((parse_second, parse_h_m_s, parse_h_m_s_ms)):
+            try:
+                self.offset = parser(options.offset)
+                print "offset is", self.offset
+                break
+            except ValueError:
+                if i == 2:
+                    raise ValueError("can't parse offset string %s", options.offset)
+                else:
+                    continue
+
+        print self.offset
 
         self._probe_result = None
         self._cfg_overwrite = options.overwrite
@@ -60,7 +91,7 @@ class Processor:
         except av.utils.AVError:
             codec = 'N/A'
             dim = 'N/A'
-        return """Filename: %s\nCodec: %s (%s)\n""" % (os.path.basename(self.video_fn), codec, dim)
+        return "Filename: %s\nCodec: %s (%s)\n" % (os.path.basename(self.video_fn), codec, dim)
 
     def run_noexcept(self):
         try:
@@ -83,7 +114,7 @@ class Processor:
         if not self._av_container:
             self._av_container = av.open(self.video_fn)
 
-        duration = self._av_container.duration / 1e6
+        duration = self._av_container.duration
         vs = self._av_container.streams.video[0]
         (video_width, video_height) = vs.width, vs.height
 
@@ -101,6 +132,8 @@ class Processor:
 
         # taking snapshot in many threads
         works = [(time, self.video_fn, thumbnail_filename_list[idx]) for idx, time in enumerate(snapshot_time_list)]
+
+        # run procedure in a thread tool
         self._threadpool.map(snapshot, works)
 
         # Concat thumbnails
@@ -112,7 +145,7 @@ class Processor:
 
         # load font
         try:
-            font = ImageFont.truetype('Roboto-Regular.ttf', size=15)
+            font = ImageFont.truetype('cour.ttf', size=15)
         except IOError:
             font = ImageFont.load_default()
 
@@ -133,7 +166,7 @@ class Processor:
                     # add text to small thumbnails
                     tick = snapshot_time_list[i * self.num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(seconds=tick)), font=font, fill='black')
+                    draw.text((10, 10), text=str(datetime.timedelta(microseconds=tick)), font=font, fill='black')
                     del draw
                 except IOError as e:
                     print e.strerror

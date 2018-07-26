@@ -16,20 +16,25 @@ thumbup
 Getting thumbup
 ---------------
 
-.. code-block:: 
-  
-  pip install thumbup
-  
 You'll need ``ffmpeg`` before you can use ``thumbup``, which can be installed by
-  
-.. code-block:: shell
+
+.. code-block::
 
   # on macOS
   brew install ffmpeg
-  # on ubuntu
-  sudo apt-get install ffmpeg
+
+  # on ubuntu (>= 14.04)
+  sudo apt-get install -y \
+    libavformat-dev libavcodec-dev libavdevice-dev \
+    libavutil-dev libswscale-dev libavresample-dev libavfilter-dev
   
 ``ffmpeg`` is also widely available for many other distros. Please refer to the official website https://www.ffmpeg.org/download.html.
+
+``thumbup`` can be installed from ``pip`` by
+
+.. code-block::
+
+  pip install thumbup
 
 Usage
 -----
