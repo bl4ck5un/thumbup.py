@@ -28,7 +28,7 @@ setup(
     ],
     keywords='video thumbnail snapshot',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['Pillow', 'av'],
+    install_requires=['Pillow', 'av', 'numpy'],
     entry_points={
         'console_scripts': [
             'thumbup=thumbup.thumbup:main',
