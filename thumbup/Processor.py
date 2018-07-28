@@ -148,7 +148,8 @@ class Processor:
             default_font = 'cour.ttf'
         elif system_id == 'Darwin':
             default_font = 'Helvetica'
-
+        else:
+            default_font = 'dummy'
         try:
             font = ImageFont.truetype(default_font, size=20)
         except IOError as e:
@@ -180,9 +181,15 @@ class Processor:
                     # ((Red value X 299) + (Green value X 587) + (Blue value X 114)) / 1000
                     brightness = (average_color[0] * 299 + average_color[1] * 587 + average_color[2] * 114) / 1000
                     text_color = (255, 255, 255) if brightness < 150 else (0, 0, 0)
-                    tick = snapshot_time_list[i * self.num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(microseconds=tick)), font=font, fill=text_color)
+
+                    # label a timestamp
+                    tick = snapshot_time_list[i * self.num_col + j]
+                    total_seconds = int(datetime.timedelta(microseconds=tick).total_seconds())
+                    hours, remainder = divmod(total_seconds, 60 * 60)
+                    minutes, seconds = divmod(remainder, 60)
+                    label = datetime.time(hour=hours, minute=minutes, second=seconds)
+                    draw.text((10, 10), text=label.strftime("%H:%M:%S"), font=font, fill=text_color)
                     del draw
                 except IOError as e:
                     logging.error("Can't gen thumbnail for ({}, {}): {}".format(i, j, e.message))
