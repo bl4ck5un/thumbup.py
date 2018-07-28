@@ -1,7 +1,9 @@
 import datetime
 import logging
 import os
+import platform
 import tempfile
+import numpy as np
 
 import av
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -65,15 +67,12 @@ class Processor:
         for i, parser in enumerate((parse_second, parse_h_m_s, parse_h_m_s_ms)):
             try:
                 self.offset = parser(options.offset)
-                print "offset is", self.offset
                 break
             except ValueError:
                 if i == 2:
                     raise ValueError("can't parse offset string %s", options.offset)
                 else:
                     continue
-
-        print self.offset
 
         self._probe_result = None
         self._cfg_overwrite = options.overwrite
@@ -97,7 +96,7 @@ class Processor:
         try:
             self._run()
         except Exception as e:
-            print e.message
+            logging.error("error: {}".format(e.message))
             return -1
 
     def _run(self):
@@ -144,9 +143,16 @@ class Processor:
         output_img = Image.new(mode='RGB', size=(pic_width, pic_height), color='white')
 
         # load font
+        system_id = platform.system()
+        if system_id == 'Linux':
+            default_font = 'cour.ttf'
+        elif system_id == 'Darwin':
+            default_font = 'Helvetica'
+
         try:
-            font = ImageFont.truetype('cour.ttf', size=15)
-        except IOError:
+            font = ImageFont.truetype(default_font, size=20)
+        except IOError as e:
+            logging.warn("can't load font {}. Fall back to default".format(e.message))
             font = ImageFont.load_default()
 
         output_draw = ImageDraw.Draw(output_img)
@@ -160,16 +166,26 @@ class Processor:
                 y = int(self.margin[0] + y_offset_for_text + i * (thumb_h + self.hspace))
                 try:
                     im = Image.open(thumbnail_filename_list[i * self.num_col + j])
+                    # down sample
                     im.thumbnail((self.thumb_width, thumb_h))
+
+                    # add frame
                     im = ImageOps.expand(im, border=2, fill='#aaa')
 
                     # add text to small thumbnails
+                    left_top_corner = im.crop((0, 0, 100, 50))
+                    # compute average color
+                    average_color = tuple(np.mean(np.array(left_top_corner), axis=(0, 1), dtype=int))
+
+                    # ((Red value X 299) + (Green value X 587) + (Blue value X 114)) / 1000
+                    brightness = (average_color[0] * 299 + average_color[1] * 587 + average_color[2] * 114) / 1000
+                    text_color = (255, 255, 255) if brightness < 150 else (0, 0, 0)
                     tick = snapshot_time_list[i * self.num_col + j]
                     draw = ImageDraw.Draw(im)
-                    draw.text((10, 10), text=str(datetime.timedelta(microseconds=tick)), font=font, fill='black')
+                    draw.text((10, 10), text=str(datetime.timedelta(microseconds=tick)), font=font, fill=text_color)
                     del draw
                 except IOError as e:
-                    print e.strerror
+                    logging.error("Can't gen thumbnail for ({}, {}): {}".format(i, j, e.message))
                     continue
                 output_img.paste(im, (x, y))
 
