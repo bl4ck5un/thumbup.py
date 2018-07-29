@@ -107,7 +107,7 @@ class Processor:
         logger.info("Processing %s" % os.path.basename(self.video_fn))
 
         if os.path.exists(self.snapshot_fn) and not self._cfg_overwrite:
-            logging.info("Thumbnail exists. Skipping... [use -o to overwrite]")
+            logging.info("Thumbnail exists. Skipping... [use -f to overwrite]")
             return 0
 
         if not self._av_container:
@@ -145,7 +145,7 @@ class Processor:
         # load font
         system_id = platform.system()
         if system_id == 'Linux':
-            default_font = 'cour.ttf'
+            default_font = 'DejaVuSans'
         elif system_id == 'Darwin':
             default_font = 'Helvetica'
         else:
