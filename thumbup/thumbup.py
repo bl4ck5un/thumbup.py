@@ -13,6 +13,7 @@ version = '1.3.0'
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger('main')
 
+
 def main():
     """The main function of thumbup.
     """

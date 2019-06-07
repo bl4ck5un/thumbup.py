@@ -25,10 +25,13 @@ class Processor:
     num_col = 3
     thumb_width = 480
 
-    # up (down), left(right)
+    # (up and down, left and right)
     margin = (20, 20)
     vspace = 15
     hspace = 15
+
+    # the height from the top to the bottom of title text
+    y_offset_for_text = 50
 
     def __init__(self, job, pool, options):
         """ create a Processor instance for job
@@ -136,7 +139,8 @@ class Processor:
         self._threadpool.map(snapshot, works)
 
         # Concat thumbnails
-        pic_height = int(self.num_row * thumb_h + 2 * self.margin[0] + self.vspace * (self.num_row - 1))
+        pic_height = int(
+            self.num_row * thumb_h + 2 * self.margin[0] + self.vspace * (self.num_row - 1) + self.y_offset_for_text)
         pic_width = int(self.num_col * self.thumb_width + 2 * self.margin[1] + self.hspace * (self.num_col - 1))
 
         # create a new image
@@ -159,12 +163,10 @@ class Processor:
         output_draw = ImageDraw.Draw(output_img)
         output_draw.text((self.margin[1], self.margin[0]), text=self._get_desc(), fill=(0, 0, 0), font=font)
 
-        y_offset_for_text = 50
-
         for i in xrange(0, self.num_row):
             for j in xrange(0, self.num_col):
                 x = int(self.margin[1] + j * (self.thumb_width + self.vspace))
-                y = int(self.margin[0] + y_offset_for_text + i * (thumb_h + self.hspace))
+                y = int(self.margin[0] + self.y_offset_for_text + i * (thumb_h + self.hspace))
                 try:
                     im = Image.open(thumbnail_filename_list[i * self.num_col + j])
                     # down sample
