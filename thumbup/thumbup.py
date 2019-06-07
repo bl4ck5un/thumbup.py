@@ -9,7 +9,7 @@ import sys
 import Job
 import Processor
 
-version = '1.3.0'
+version = '1.4.0'
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger('main')
 
