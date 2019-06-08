@@ -13,7 +13,7 @@ except ImportError:
     import Job
     import Processor
 
-version = '1.4.3'
+version = '1.5.0'
 
 
 logging.basicConfig(level=logging.INFO)
