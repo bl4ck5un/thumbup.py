@@ -1,4 +1,5 @@
 import datetime
+import coloredlogs
 import logging
 import os
 import platform
@@ -15,7 +16,7 @@ def snapshot(work):
     microseconds, input_filename, output_filename = work
     av_container = av.open(input_filename)
     av_container.seek(microseconds, 'time')
-    frame = av_container.decode(video=0).next()
+    frame = next(av_container.decode(video=0))
     im = frame.to_image()
     im.save(output_filename)
 
@@ -101,15 +102,13 @@ class Processor:
         try:
             self._run()
         except Exception as e:
-            logging.error("error: {}".format(e.message))
+            logging.error("error: {}".format(e))
             return -1
 
     def _run(self):
         """ execute the processor in one thread
-
-        :return: None
         """
-        logger.info("Processing %s" % os.path.basename(self.video_fn))
+        logger.info("Processing {}".format(os.path.basename(self.video_fn)))
 
         if os.path.exists(self.snapshot_fn) and not self._cfg_overwrite:
             logging.info("Thumbnail exists. Skipping... [use -f to overwrite]")

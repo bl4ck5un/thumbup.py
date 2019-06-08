@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
 
 import argparse
+import coloredlogs
 import logging
 import multiprocessing
 import sys
 
-from thumbup import Job
-from thumbup import Processor
+try:
+    from thumbup import Job
+    from thumbup import Processor
+except ImportError:
+    import Job
+    import Processor
 
 version = '1.4.3'
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('thumbup')
+
+coloredlogs.install(level='INFO', logger=logger,
+                    fmt="[%(levelname)5s] %(message)s")
 
 
 def main():
