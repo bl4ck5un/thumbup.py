@@ -5,8 +5,8 @@ import logging
 import multiprocessing
 import sys
 
-from . import Job
-from . import Processor
+from thumbup import Job
+from thumbup import Processor
 
 version = '1.4.2'
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
