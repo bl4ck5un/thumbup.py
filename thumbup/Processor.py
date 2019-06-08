@@ -3,9 +3,9 @@ import logging
 import os
 import platform
 import tempfile
-import numpy as np
 
 import av
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ class Processor:
             offset_obj = datetime.datetime.strptime(string, fmt).time()
             # 3600 * seconds + microseconds
             return 1e6 * (offset_obj.hour * 3600 + offset_obj.minute * 60 + offset_obj.second) \
-                   + offset_obj.microsecond
+                + offset_obj.microsecond
 
         def parse_h_m_s(string):
             # parse "%H:%M:%S.%f" to microseconds
@@ -73,7 +73,8 @@ class Processor:
                 break
             except ValueError:
                 if i == 2:
-                    raise ValueError("can't parse offset string %s", options.offset)
+                    raise ValueError(
+                        "can't parse offset string %s", options.offset)
                 else:
                     continue
 
@@ -89,7 +90,8 @@ class Processor:
         try:
             vs = self._av_container.streams.video[0]
             dim = '%dx%d' % (vs.width, vs.height)
-            codec = '%s, %s' % (vs.name, self._av_container.streams.audio[0].name)
+            codec = '%s, %s' % (
+                vs.name, self._av_container.streams.audio[0].name)
         except av.utils.AVError:
             codec = 'N/A'
             dim = 'N/A'
@@ -126,14 +128,17 @@ class Processor:
         # calculate the time (in seconds)
         num_pics = self.num_row * self.num_col
         step = (duration - self.offset) / num_pics
-        snapshot_time_list = [int(self.offset + x * step) for x in xrange(0, num_pics)]
+        snapshot_time_list = [int(self.offset + x * step)
+                              for x in range(num_pics)]
 
         # make temp directory to store tmp pics
         tmp_dir = tempfile.mkdtemp()
-        thumbnail_filename_list = [os.path.join(tmp_dir, "%d.jpg" % x) for x in xrange(0, num_pics)]
+        thumbnail_filename_list = [os.path.join(
+            tmp_dir, "%d.jpg" % x) for x in range(num_pics)]
 
         # taking snapshot in many threads
-        works = [(time, self.video_fn, thumbnail_filename_list[idx]) for idx, time in enumerate(snapshot_time_list)]
+        works = [(time, self.video_fn, thumbnail_filename_list[idx])
+                 for idx, time in enumerate(snapshot_time_list)]
 
         # run procedure in a thread tool
         self._threadpool.map(snapshot, works)
@@ -141,10 +146,12 @@ class Processor:
         # Concat thumbnails
         pic_height = int(
             self.num_row * thumb_h + 2 * self.margin[0] + self.vspace * (self.num_row - 1) + self.y_offset_for_text)
-        pic_width = int(self.num_col * self.thumb_width + 2 * self.margin[1] + self.hspace * (self.num_col - 1))
+        pic_width = int(self.num_col * self.thumb_width + 2 *
+                        self.margin[1] + self.hspace * (self.num_col - 1))
 
         # create a new image
-        output_img = Image.new(mode='RGB', size=(pic_width, pic_height), color='white')
+        output_img = Image.new(mode='RGB', size=(
+            pic_width, pic_height), color='white')
 
         # load font
         system_id = platform.system()
@@ -157,18 +164,22 @@ class Processor:
         try:
             font = ImageFont.truetype(default_font, size=20)
         except IOError as e:
-            logging.warn("can't load font {}. Fall back to default".format(e.message))
+            logging.warn(
+                "can't load font {}. Fall back to default".format(e.message))
             font = ImageFont.load_default()
 
         output_draw = ImageDraw.Draw(output_img)
-        output_draw.text((self.margin[1], self.margin[0]), text=self._get_desc(), fill=(0, 0, 0), font=font)
+        output_draw.text((self.margin[1], self.margin[0]),
+                         text=self._get_desc(), fill=(0, 0, 0), font=font)
 
-        for i in xrange(0, self.num_row):
-            for j in xrange(0, self.num_col):
+        for i in range(self.num_row):
+            for j in range(self.num_col):
                 x = int(self.margin[1] + j * (self.thumb_width + self.vspace))
-                y = int(self.margin[0] + self.y_offset_for_text + i * (thumb_h + self.hspace))
+                y = int(
+                    self.margin[0] + self.y_offset_for_text + i * (thumb_h + self.hspace))
                 try:
-                    im = Image.open(thumbnail_filename_list[i * self.num_col + j])
+                    im = Image.open(
+                        thumbnail_filename_list[i * self.num_col + j])
                     # down sample
                     im.thumbnail((self.thumb_width, thumb_h))
 
@@ -178,23 +189,30 @@ class Processor:
                     # add text to small thumbnails
                     left_top_corner = im.crop((0, 0, 100, 50))
                     # compute average color
-                    average_color = tuple(np.mean(np.array(left_top_corner), axis=(0, 1), dtype=int))
+                    average_color = tuple(
+                        np.mean(np.array(left_top_corner), axis=(0, 1), dtype=int))
 
                     # ((Red value X 299) + (Green value X 587) + (Blue value X 114)) / 1000
-                    brightness = (average_color[0] * 299 + average_color[1] * 587 + average_color[2] * 114) / 1000
-                    text_color = (255, 255, 255) if brightness < 150 else (0, 0, 0)
+                    brightness = (
+                        average_color[0] * 299 + average_color[1] * 587 + average_color[2] * 114) / 1000
+                    text_color = (
+                        255, 255, 255) if brightness < 150 else (0, 0, 0)
                     draw = ImageDraw.Draw(im)
 
                     # label a timestamp
                     tick = snapshot_time_list[i * self.num_col + j]
-                    total_seconds = int(datetime.timedelta(microseconds=tick).total_seconds())
+                    total_seconds = int(datetime.timedelta(
+                        microseconds=tick).total_seconds())
                     hours, remainder = divmod(total_seconds, 60 * 60)
                     minutes, seconds = divmod(remainder, 60)
-                    label = datetime.time(hour=hours, minute=minutes, second=seconds)
-                    draw.text((10, 10), text=label.strftime("%H:%M:%S"), font=font, fill=text_color)
+                    label = datetime.time(
+                        hour=hours, minute=minutes, second=seconds)
+                    draw.text((10, 10), text=label.strftime(
+                        "%H:%M:%S"), font=font, fill=text_color)
                     del draw
                 except IOError as e:
-                    logging.error("Can't gen thumbnail for ({}, {}): {}".format(i, j, e.message))
+                    logging.error(
+                        "Can't gen thumbnail for ({}, {}): {}".format(i, j, e.message))
                     continue
                 output_img.paste(im, (x, y))
 

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 
 import argparse
 import logging
@@ -11,13 +10,14 @@ import Processor
 
 version = '1.4.0'
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
-logger = logging.getLogger('main')
+logger = logging.getLogger('thumbup')
 
 
 def main():
     """The main function of thumbup.
     """
-    parser = argparse.ArgumentParser(description="thumbup video thumbnail generator v%s" % version)
+    parser = argparse.ArgumentParser(
+        description="thumbup video thumbnail generator v{}".format(version))
     parser.add_argument('input', metavar='FILE', nargs='+',
                         help='one or more video files or directories (with -r)')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False,
@@ -42,7 +42,7 @@ def main():
         for filename in options.input:
             jobs += Job.dir_scanner(filename, options)
     except Exception as e:
-        print 'Cannot parse input', str(e)
+        logger.error('Cannot parse input: {}'.format(e))
         sys.exit(-1)
 
     logger.info('collected %d jobs' % len(jobs))
@@ -51,7 +51,7 @@ def main():
     procs = [Processor.Processor(j, pool, options) for j in jobs]
 
     for idx, p in enumerate(procs):
-        logging.info('[%d / %d]' % (idx, len(procs)))
+        logger.info('[%d / %d]' % (idx, len(procs)))
         p.run_noexcept()
 
     logger.info('Done.')
