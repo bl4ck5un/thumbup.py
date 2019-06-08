@@ -8,7 +8,7 @@ import sys
 from . import Job
 from . import Processor
 
-version = '1.4.1'
+version = '1.4.2'
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
 logger = logging.getLogger('thumbup')
 
