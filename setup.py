@@ -31,7 +31,7 @@ setup(
     install_requires=['Pillow', 'av', 'numpy'],
     entry_points={
         'console_scripts': [
-            'thumbup=thumbup',
+            'thumbup=thumbup.cmd_line:main',
         ],
     },
 )
